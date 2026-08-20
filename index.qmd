@@ -1,0 +1,257 @@
+---
+title: "Painel de Violência Interpessoal e Autoprovocada"
+lang: pt-BR
+
+format:
+  dashboard:
+    theme: [cosmo, senado.scss]
+    logo:
+      path: assets/logo-datasenado.jpg
+      alt: "Instituto de Pesquisa DataSenado"
+    orientation: rows
+    scrolling: false
+    expandable: true
+
+execute:
+  echo: false
+  warning: false
+  message: false
+  cache: true
+---
+
+# Sinan
+
+## Subpainéis {.tabset}
+
+```{r Motivos, cache=FALSE}
+#| title: Motivos
+
+
+rm(list = ls())
+library(tidyverse)
+library(echarts4r)
+load('tabelas/dados_001.rda')
+source('funcoes_graf.r')
+source('config.R')
+
+dados_001 |> 
+  filter(ciclo_vida %in% c("Criança", "Adolescente"),
+         ciclo_vida != "Jovem"  ,
+         #year(data_notific) >2020
+         ) |> 
+  group_by(data_notific, ciclo_vida, motivo_violencia) |> 
+  summarise(n=sum(n), 
+            .groups = 'drop') |> 
+  grafico_linhas_facetas(
+    eixo_x = data_notific,
+    eixo_y = n,
+    grupo = ciclo_vida,
+    titulo = "Nº notificações",
+    escala_y_livre = TRUE,
+    facet = motivo_violencia,
+    colunas = 3,
+   
+  )
+
+  
+```
+
+```{r Agressores, cache=FALSE}
+#| title: Agressores
+
+dados_001 |> 
+  filter(ciclo_vida %in% c("Criança", "Adolescente"),
+         ciclo_vida != "Jovem"  ,
+         #year(data_notific) >2020
+         ) |> 
+  group_by(data_notific, ciclo_vida, autor) |> 
+  summarise(n=sum(n), 
+            .groups = 'drop') |> 
+  grafico_linhas_facetas(
+    eixo_x = data_notific,
+    eixo_y = n,
+    grupo = ciclo_vida,
+    titulo = "Nº notificações",
+    escala_y_livre = TRUE,
+    facet = autor,
+    colunas = 5,
+   
+  )
+
+  
+```
+
+```{r Agressores x Vítimas}
+#| title: Agressores e vítimas
+
+
+library(dplyr)
+library(ggplot2)
+library(scales)
+
+dados_heatmap <- dados_001 |>
+  mutate(
+    ciclo_vida       = coalesce(ciclo_vida, "Não informado"),
+    ciclo_vida_autor = coalesce(ciclo_vida_autor, "Ignorado")
+  ) |>
+  group_by(ciclo_vida, ciclo_vida_autor) |>
+  summarise(n = sum(n, na.rm = TRUE), .groups = "drop")
+
+g1 <- ggplot(
+  dados_heatmap,
+  aes(
+    x = ciclo_vida_autor,
+    y = ciclo_vida,
+    fill = n
+  )
+) +
+  geom_tile(color = "white", linewidth = 0.6) +
+  geom_text(
+    aes(label = label_number(big.mark = ".", decimal.mark = ",")(n)),
+    size = 3
+  ) +
+  scale_fill_viridis_c(
+    trans = "log1p",
+    labels = label_number(big.mark = ".", decimal.mark = ","),
+    name = "Frequência"
+  ) +
+  labs(
+    x = "Ciclo de vida do autor",
+    y = "Ciclo de vida",
+    title = "Distribuição segundo o ciclo de vida e o ciclo de vida do autor"
+  ) +
+  coord_equal() +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold")
+  )
+
+
+
+
+g2 <- ggplot(
+  dados_heatmap |> filter(ciclo_vida %in% c('Adolescente', 'Criança')),
+  aes(
+    x = ciclo_vida_autor,
+    y = ciclo_vida,
+    fill = n
+  )
+) +
+  geom_tile(color = "white", linewidth = 0.6) +
+  geom_text(
+    aes(label = label_number(big.mark = ".", decimal.mark = ",")(n)),
+    size = 3
+  ) +
+  scale_fill_viridis_c(
+    trans = "log1p",
+    labels = label_number(big.mark = ".", decimal.mark = ","),
+    name = "Frequência"
+  ) +
+  labs(
+    x = "Ciclo de vida do autor",
+    y = "Ciclo de vida",
+    title = "Distribuição criança/adolescente e o ciclo de vida do autor"
+  ) +
+  coord_equal() +
+  theme_minimal(base_size = 12) +
+  theme(
+    panel.grid = element_blank(),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(face = "bold")
+  )
+
+
+library(patchwork)
+
+g1
+g2
+
+```
+
+
+
+
+# Justiça - CNJ
+
+## Subpainéis {.tabset}
+
+```{r Nº Processos, cache=FALSE}
+#| title: Nº Processos
+
+library(tidyverse)
+library(echarts4r)
+
+load('justica/processos_df.rda')
+
+  
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(lubridate)
+library(stringr)
+
+processos_mes <- processos_df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == "53") |>
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+    subtitle = "Séries mensais no Distrito Federal",
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+  
+
+  
+```

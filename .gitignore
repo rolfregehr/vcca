@@ -1,0 +1,16 @@
+# Ignora tudo por padrão; libera somente as entradas da renderização.
+*
+
+!.gitignore
+!index.qmd
+!config.R
+!funcoes_graf.r
+!senado.scss
+
+!assets/
+assets/*
+!assets/logo-datasenado.jpg
+
+!tabelas/
+tabelas/*
+!tabelas/dados_001.rda
