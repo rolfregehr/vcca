@@ -1,5 +1,5 @@
 source("config.R")
-
+# hgfh
 grafico_barras_horizontal <- function(
     dados,
     categorias,
