@@ -81,6 +81,8 @@ dados_001 |>
   
 ```
 
+
+
 ```{r Agressores x Vítimas}
 #| title: Agressores e vítimas
 
@@ -171,6 +173,164 @@ g2
 ```
 
 
+```{r principais cruzamentos}
+#| title: Autor x Vítima x Causa
+
+pacman::p_load(dplyr, gtExtras, gt, scales)
+
+
+
+dados_001 |> 
+  filter(ciclo_vida %in% c("Criança", "Adolescente"),
+         ciclo_vida != "Jovem") |> 
+  group_by(ciclo_vida_autor, ciclo_vida, motivo_violencia) |> 
+  summarise(n=sum(n), .groups = 'drop') |> 
+  arrange(-n) |> 
+  head(20) |> 
+  mutate(
+    ciclo_vida_autor = coalesce(ciclo_vida_autor, "Não informado"),
+    ciclo_vida       = coalesce(ciclo_vida, "Não informado"),
+    motivo_violencia = coalesce(motivo_violencia, "Não informado"),
+    barra             = n
+  ) |>
+  gt() |>
+  cols_label(
+    ciclo_vida_autor = "Ciclo de vida do autor",
+    ciclo_vida       = "Ciclo de vida da vítima",
+    motivo_violencia = "Motivo da violência",
+    n                 = "Frequência",
+    barra             = "Frequência relativa"
+  ) |>
+  fmt_number(
+    columns = n,
+    decimals = 0,
+    sep_mark = ".",
+    dec_mark = ","
+  ) |>
+  gt_plt_bar(
+    column = barra,
+    scaled = TRUE,
+    color = "#3B82F6",
+    background = "#E5E7EB",
+    width = 60
+  ) |>
+  cols_align(
+    align = "left",
+    columns = c(
+      ciclo_vida_autor,
+      ciclo_vida,
+      motivo_violencia
+    )
+  ) |>
+  cols_align(
+    align = "right",
+    columns = n
+  ) |>
+  cols_width(
+    ciclo_vida_autor ~ px(150),
+    ciclo_vida       ~ px(150),
+    motivo_violencia ~ px(250),
+    n                 ~ px(110),
+    barra             ~ px(180)
+  )
+
+
+```
+
+
+```{r principais cruzamentos - gênero}
+#| title: Autor x Vítima x Gênero
+
+ordem <- dados_001 |> 
+  filter(ciclo_vida %in% c("Criança", "Adolescente")) |> 
+  group_by(motivo_violencia) |> 
+  summarise(
+    n = sum(n, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  arrange(desc(n), motivo_violencia) |> 
+  slice_head(n = 10) |> 
+  pull(motivo_violencia)
+
+dados_001 |> 
+  filter(
+    ciclo_vida %in% c("Criança", "Adolescente"),
+    match(motivo_violencia, ordem, nomatch = 0L) > 0L
+  ) |> 
+  group_by(
+    genero_autor,
+    genero_vitima,
+    motivo_violencia
+  ) |> 
+  summarise(
+    n = sum(n, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  mutate(
+    ordem_motivo = match(motivo_violencia, ordem)
+  ) |>
+  arrange(
+    ordem_motivo,
+    desc(n)
+  ) |> 
+  mutate(
+    genero_vitima = coalesce(
+      genero_vitima,
+      "Não informado"
+    ),
+    genero_autor = coalesce(
+      genero_autor,
+      "Não informado"
+    ),
+    motivo_violencia = coalesce(
+      motivo_violencia,
+      "Não informado"
+    ),
+    barra = n
+  ) |>
+  select(-ordem_motivo) |>
+  gt() |>
+  cols_label(
+    genero_autor     = "Gênero do autor",
+    genero_vitima    = "Gênero da vítima",
+    motivo_violencia = "Motivo da violência",
+    n                 = "Frequência",
+    barra             = "Frequência relativa"
+  ) |>
+  fmt_number(
+    columns = n,
+    decimals = 0,
+    sep_mark = ".",
+    dec_mark = ","
+  ) |>
+  gt_plt_bar(
+    column = barra,
+    scaled = TRUE,
+    color = "#3B82F6",
+    background = "#E5E7EB",
+    width = 60
+  ) |>
+  cols_align(
+    align = "left",
+    columns = c(
+      genero_autor,
+      genero_vitima,
+      motivo_violencia
+    )
+  ) |>
+  cols_align(
+    align = "right",
+    columns = n
+  ) |>
+  cols_width(
+    genero_autor     ~ px(150),
+    genero_vitima    ~ px(150),
+    motivo_violencia ~ px(250),
+    n                 ~ px(110),
+    barra             ~ px(180)
+  )
+
+```
 
 
 # Justiça - CNJ
@@ -201,7 +361,6 @@ processos_mes <- processos_df |>
   count(mes, name = "Processos")
 
 notificacoes_mes <- dados_001 |>
-  filter(SG_UF_OCOR == "53") |>
   mutate(
     data_notific = ymd(data_notific),
     mes = floor_date(data_notific, unit = "month")
