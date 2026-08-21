@@ -14,3 +14,7 @@ assets/*
 !tabelas/
 tabelas/*
 !tabelas/dados_001.rda
+
+!justica/
+justica/*
+!justica/processos_df.rda
