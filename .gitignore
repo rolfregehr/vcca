@@ -1,4 +1,4 @@
-# Ignora tudo por padrão; libera somente as entradas da renderização.
+# Ignora tudo por padrão; libera somente as entradas necessárias.
 *
 
 !.gitignore
@@ -15,6 +15,6 @@ assets/*
 tabelas/*
 !tabelas/dados_001.rda
 
+# Inclui a pasta justiça e todo o seu conteúdo
 !justica/
-justica/*
-!justica/processos_df.rda
+!justica/**
