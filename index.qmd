@@ -32,6 +32,8 @@ load('tabelas/dados_001.rda')
 source('funcoes_graf.r')
 source('config.R')
 
+# teste
+
 uf_ibge <- tibble::tribble(
   ~cod_uf, ~uf, ~nome_uf,
   11, "RO", "Rondônia",
