@@ -18,3 +18,4 @@ tabelas/*
 # Inclui a pasta justiça e todo o seu conteúdo
 !justica/
 !justica/**
+.Rproj.user
