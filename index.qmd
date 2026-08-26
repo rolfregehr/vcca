@@ -5,9 +5,7 @@ lang: pt-BR
 format:
   dashboard:
     theme: [cosmo, senado.scss]
-    logo:
-      path: assets/logo-datasenado.jpg
-      alt: "Instituto de Pesquisa DataSenado"
+    logo: assets/logo-datasenado.jpg
     orientation: rows
     scrolling: false
     expandable: true
@@ -33,6 +31,38 @@ library(echarts4r)
 load('tabelas/dados_001.rda')
 source('funcoes_graf.r')
 source('config.R')
+
+uf_ibge <- tibble::tribble(
+  ~cod_uf, ~uf, ~nome_uf,
+  11, "RO", "Rondônia",
+  12, "AC", "Acre",
+  13, "AM", "Amazonas",
+  14, "RR", "Roraima",
+  15, "PA", "Pará",
+  16, "AP", "Amapá",
+  17, "TO", "Tocantins",
+  21, "MA", "Maranhão",
+  22, "PI", "Piauí",
+  23, "CE", "Ceará",
+  24, "RN", "Rio Grande do Norte",
+  25, "PB", "Paraíba",
+  26, "PE", "Pernambuco",
+  27, "AL", "Alagoas",
+  28, "SE", "Sergipe",
+  29, "BA", "Bahia",
+  31, "MG", "Minas Gerais",
+  32, "ES", "Espírito Santo",
+  33, "RJ", "Rio de Janeiro",
+  35, "SP", "São Paulo",
+  41, "PR", "Paraná",
+  42, "SC", "Santa Catarina",
+  43, "RS", "Rio Grande do Sul",
+  50, "MS", "Mato Grosso do Sul",
+  51, "MT", "Mato Grosso",
+  52, "GO", "Goiás",
+  53, "DF", "Distrito Federal"
+) |> arrange(uf)
+
 
 dados_001 |> 
   filter(ciclo_vida %in% c("Criança", "Adolescente"),
@@ -399,7 +429,7 @@ ggplot(
   ) +
   labs(
     title = "Processos ajuizados e notificações",
-    subtitle = "Séries mensais no Distrito Federal",
+        subtitle = uf_ibge$nome_uf[23],
     x = NULL,
     y = "Número de registros",
     color = NULL
@@ -414,3 +444,2512 @@ ggplot(
 
   
 ```
+
+
+```{r AC}
+#| title: AC
+
+
+
+estado <- "AC"
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[1],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+```{r AL}
+#| title: AL
+
+
+
+estado <- uf_ibge$uf[2]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[2],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+```{r AM}
+#| title: AM
+
+
+
+estado <- uf_ibge$uf[3]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[3],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r AP}
+#| title: AP
+
+
+
+estado <- uf_ibge$uf[4]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[4],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r BA}
+#| title: BA
+
+
+
+estado <- uf_ibge$uf[5]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[5],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r CE}
+#| title: CE
+
+
+
+estado <- uf_ibge$uf[6]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[6],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r DF}
+#| title: DF
+estado <- uf_ibge$uf[7]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[7],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r ES}
+#| title: ES
+
+estado <- uf_ibge$uf[8]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[8],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r GO}
+#| title: GO
+
+
+
+estado <- uf_ibge$uf[9]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[9],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r MA}
+#| title: MA
+
+
+
+estado <- uf_ibge$uf[10]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[10],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r MG}
+#| title: MG
+
+
+
+estado <- uf_ibge$uf[11]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[11],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r MS}
+#| title: MS
+
+
+
+estado <- uf_ibge$uf[12]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[12],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r MT}
+#| title: MT
+
+
+
+estado <- uf_ibge$uf[13]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[13],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r PA}
+#| title: PA
+
+
+
+estado <- uf_ibge$uf[14]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[14],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r PB}
+#| title: PB
+
+
+
+estado <- uf_ibge$uf[15]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[15],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r PE}
+#| title: PE
+
+
+
+estado <- uf_ibge$uf[16]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[16],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r PI}
+#| title: PI
+
+
+
+estado <- uf_ibge$uf[17]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[17],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r PR}
+#| title: PR
+
+
+
+estado <- uf_ibge$uf[18]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[18],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r RJ}
+#| title: RJ
+
+
+
+estado <- uf_ibge$uf[19]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[19],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r RN}
+#| title: RN
+
+
+
+estado <- uf_ibge$uf[20]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[20],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r RO}
+#| title: RO
+
+
+
+estado <- uf_ibge$uf[21]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[21],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r RR}
+#| title: RR
+
+
+
+estado <- uf_ibge$uf[22]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[22],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r RS}
+#| title: RS
+
+
+
+estado <- uf_ibge$uf[23]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+    subtitle = uf_ibge$nome_uf[23],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r SC}
+#| title: SC
+
+
+
+estado <- uf_ibge$uf[24]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[24],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r SE}
+#| title: SE
+
+
+
+estado <- uf_ibge$uf[25]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[25],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r SP}
+#| title: SP
+
+
+
+estado <- uf_ibge$uf[26]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[26],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+
+
+
+
+```{r TO}
+#| title: TO
+
+
+
+estado <- uf_ibge$uf[27]
+
+
+df <- map_dfr(list.files("justica/processos_ano_uf",
+                         pattern = paste0("^processos_", estado, ".*\\.rda$"),
+                         full.names = TRUE
+), function(arq) {env <- new.env()
+objetos <- load(arq, envir = env)
+
+objetos |>
+  map(\(x) env[[x]]) |>
+  keep(is.data.frame) |>
+  bind_rows()})  
+  
+
+
+
+
+processos_mes <- df |>
+  mutate(
+    data = ymd(str_sub(data_ajuizamento, 1, 8)),
+    mes  = floor_date(data, unit = "month")
+  ) |>
+  distinct(mes, numero_processo) |>
+  count(mes, name = "Processos")
+
+notificacoes_mes <- dados_001 |>
+  filter(SG_UF_OCOR == uf_ibge$cod_uf[which(uf_ibge$uf == estado)]) |> 
+  mutate(
+    data_notific = ymd(data_notific),
+    mes = floor_date(data_notific, unit = "month")
+  ) |>
+  summarise(
+    Notificações = sum(n, na.rm = TRUE),
+    .by = mes
+  )
+
+dados_grafico <- full_join(
+  processos_mes,
+  notificacoes_mes,
+  by = "mes"
+) |>
+  pivot_longer(
+    cols = c(Processos, Notificações),
+    names_to = "serie",
+    values_to = "n"
+  )
+
+
+ggplot(
+  dados_grafico,
+  aes(x = mes, y = n, color = serie)
+) +
+  geom_line(linewidth = 0.9, na.rm = TRUE) +
+  scale_color_manual(
+    values = c(
+      "Processos" = "#0072B2",
+      "Notificações" = "#D55E00"
+    )
+  ) +
+  scale_x_date(
+    date_breaks = "2 years",
+    date_labels = "%Y"
+  ) +
+  labs(
+    title = "Processos ajuizados e notificações",
+        subtitle = uf_ibge$nome_uf[27],
+    x = NULL,
+    y = "Número de registros",
+    color = NULL
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    legend.position = "top",
+    panel.grid.minor = element_blank(),
+    plot.title = element_text(face = "bold")
+  )
+
+
+```
+
+
+```{r graf_barras_assunto}
+#| title: Assuntos
+rm(list = ls())
+library(dplyr)
+library(scales)
+library(tidyr)
+library(stringr)
+library(purrr)
+
+ler_rda_df <- function(arquivo) {
+  ambiente <- new.env()
+  objetos <- load(arquivo, envir = ambiente)
+  
+  objetos |>
+    map(\(nome) ambiente[[nome]]) |>
+    keep(is.data.frame) |>
+    list_rbind()
+}
+
+processos_df <- list.files(
+  "justica/processos_ano_uf",
+  pattern = "\\.(rda|RData)$",
+  full.names = TRUE,
+  ignore.case = TRUE
+) |>
+  map(ler_rda_df) |>
+  list_rbind()
+
+
+assuntos_df <- processos_df |>
+  select(numero_processo, assunto_nome) |>
+  filter(!is.na(assunto_nome)) |>
+  separate_longer_delim(assunto_nome, delim = ";") |>
+  mutate(assunto_nome = str_squish(assunto_nome)) |>
+  filter(assunto_nome != "") |>
+  distinct(numero_processo, assunto_nome) |>
+  count(assunto_nome, name = "n", sort = TRUE) |> 
+  head(20)
+
+
+assuntos_df |> 
+  mutate(assunto_nome = reorder(assunto_nome, n)) |> 
+  ggplot(aes(x = assunto_nome, y = n))+
+  geom_col()+
+  coord_flip()+
+  scale_y_continuous(
+    labels = label_number(
+      big.mark = ".",
+      decimal.mark = ",",
+      accuracy = 1
+    )
+  ) +
+  labs(
+    title = "Assuntos mais frequentes - ECA",
+    x = "Assunto",
+    y = "Número de processos"
+  )+
+  theme_minimal()
+
+
+```
+
