@@ -2955,3 +2955,397 @@ assuntos_df |>
 
 ```
 
+# Conselhos tutelares
+
+## Subpainéis {.tabset}
+
+
+```{r coropletico_conselhos_tutelares}
+#| title: "Conselhos tutelares: ano base 2023 - fonte: IBGE"
+
+# Dados --------------------------------------------------------------------
+
+load("conselhos_tutelares/cons_tut.rda")
+
+library(geobr)
+library(sf)
+library(dplyr)
+library(ggplot2)
+
+
+# Malha municipal ----------------------------------------------------------
+
+mun_geo <- read_municipality(
+  code_muni = "all",
+  year = 2022,
+  simplified = TRUE
+)
+
+
+
+# Junta os dados à malha municipal -----------------------------------------
+
+mapa_ct <- mun_geo |>
+  mutate(
+    mun = as.character(code_muni)
+  ) |>
+  left_join(
+    cons_tut |>
+      mutate(mun = as.character(mun)),
+    by = "mun"
+  )
+
+
+# Quintis ------------------------------------------------------------------
+#
+# 0 é mantido como uma categoria própria.
+# Os demais municípios são divididos em quintis.
+
+x <- mapa_ct$ct_por_pop_crianca_adolescente
+
+breaks_ct <- quantile(
+  x[
+    x > 0 &
+      !is.na(x)
+  ],
+  probs = seq(0, 1, 0.2),
+  na.rm = TRUE,
+  names = FALSE
+)
+
+# Evita problema caso dois quantis sejam exatamente iguais
+breaks_ct <- unique(breaks_ct)
+
+
+# Cria os intervalos apenas para valores positivos
+
+faixa_pos <- cut(
+  x,
+  breaks = breaks_ct,
+  include.lowest = TRUE,
+  dig.lab = 3,
+  ordered_result = TRUE
+)
+
+
+# Monta a variável final:
+# 0 + quintis positivos
+
+mapa_ct <- mapa_ct |>
+  mutate(
+    faixa_ct = case_when(
+      is.na(ct_por_pop_crianca_adolescente) ~ NA_character_,
+      ct_por_pop_crianca_adolescente == 0   ~ "0",
+      TRUE                                  ~ as.character(faixa_pos)
+    ),
+    
+    faixa_ct = factor(
+      faixa_ct,
+      levels = c(
+        "0",
+        levels(faixa_pos)
+      )
+    )
+  )
+
+
+# Mapa ---------------------------------------------------------------------
+
+ggplot(mapa_ct) +
+  geom_sf(
+    aes(fill = faixa_ct),
+    color = NA
+  ) +
+  scale_fill_viridis_d(
+    option = "C",
+    direction = -1,
+    na.value = "red",
+    name = "Conselhos tutelares\npor 100 mil crianças\ne adolescentes"
+  ) +
+  labs(
+    title = "Conselhos tutelares por população de crianças e adolescentes",
+    subtitle = "Número de conselhos tutelares por 100 mil crianças e adolescentes, segundo município — Brasil, 2023",
+    caption = "Fonte: IBGE, Pesquisa de Informações Básicas Municipais (MUNIC), 2023 e Censo, 2022."
+  ) +
+  theme_void() +
+  theme(
+    plot.title = element_text(
+      face = "bold",
+      size = 16
+    ),
+    plot.subtitle = element_text(
+      size = 11,
+      margin = margin(b = 12)
+    ),
+    plot.caption = element_text(
+      size = 9,
+      hjust = 0
+    ),
+    legend.title = element_text(
+      size = 10,
+      face = "bold"
+    ),
+    legend.text = element_text(
+      size = 9
+    )
+  )
+
+```
+
+
+
+# DATASUS
+
+## Subpainéis {.tabset}
+
+
+```{r sihsus_rd}
+#| title: "Atentimentos hospitalares"
+#| fig-width: 15
+#| fig-height: 8
+#| out-width: 100%
+#| fig-format: svg
+
+
+load('sih/sih_viol_sexual')
+
+pacman::p_load(tidyverse,
+               ggrepel,
+               patchwork)
+
+base <- sih_viol_sexual |> 
+  transmute(
+    cod_mun = MUNIC_RES,
+    data = ymd(DT_INTER),
+    genero = case_when(
+      SEXO == "1" ~ "Masc",
+      SEXO == "3" ~ "Fem",
+      T ~ "NI",
+      ),
+    idade = time_length(interval(ymd(NASC), ymd(DT_INTER)), "years") |> floor(),
+    ciclo_vida = case_when(                                                     # Referência: ECA
+      idade <= 11 ~ "Criança",
+      idade <= 17 ~ "Adolescente",
+      TRUE ~ "Adulto"
+    )
+    ) |> 
+  mutate(data = floor_date(data, unit = 'quarter')) |> 
+  filter(data != max(data)) 
+
+# Graf 1 - Criança -------
+
+dados_graf <- base |> 
+  filter(ciclo_vida == "Criança") |> 
+  group_by(data) |> 
+  summarise(
+    n = n(),
+    .groups = "drop"
+  )
+
+maximo <- dados_graf |> 
+  slice_max(n, n = 1, with_ties = FALSE) |> 
+  mutate(
+    trimestre = paste0(
+      year(data),
+      " - ",
+      quarter(data),
+      "º tri."
+    )
+  )
+
+g1 <- ggplot(dados_graf, aes(x = data, y = n)) +
+  geom_line() +
+  geom_point(
+    data = maximo,
+    size = 2
+  ) +
+  geom_label_repel(
+    data = maximo,
+    aes(label = paste0(trimestre, "\n", n, " notificações")),
+    direction = "y",
+    nudge_x = -2500,
+    nudge_y = -7,
+    size = 3.5
+  ) +
+  theme_minimal() +
+  labs(
+    title = paste(
+      "Violência sexual",
+      "-",
+      min(year(base$data)),
+      "a",
+      max(year(base$data))
+    ),
+    subtitle = "Criança",
+    y = "Notificações",
+    x = "Trimestre"
+  )
+
+# Graf 2 - Adolescente -------
+
+dados_graf <- base |> 
+  filter(ciclo_vida == "Adolescente") |> 
+  group_by(data) |> 
+  summarise(
+    n = n(),
+    .groups = "drop"
+  )
+
+maximo <- dados_graf |> 
+  slice_max(n, n = 1, with_ties = FALSE) |> 
+  mutate(
+    trimestre = paste0(
+      year(data),
+      " - ",
+      quarter(data),
+      "º tri."
+    )
+  )
+
+g2 <- ggplot(dados_graf, aes(x = data, y = n)) +
+  geom_line() +
+  geom_point(
+    data = maximo,
+    size = 2
+  ) +
+  geom_label_repel(
+    data = maximo,
+    aes(label = paste0(trimestre, "\n", n, " notificações")),
+    direction = "y",
+    nudge_x = -2500,
+    nudge_y = -7,
+    size = 3.5
+  ) +
+  theme_minimal() +
+  labs(
+    title = paste(
+      "Violência sexual",
+      "-",
+      min(year(base$data)),
+      "a",
+      max(year(base$data))
+    ),
+    subtitle = "Adolescente",
+    y = "Notificações",
+    x = "Trimestre"
+  )
+
+
+g3 <- base |> 
+  filter(ciclo_vida == "Criança") |> 
+  group_by(genero, idade) |> 
+  summarise(n=n(), .groups = 'drop') |> 
+  ggplot(aes(x = idade, y = n, color = genero))+
+  geom_line()+
+  theme_minimal()+
+  labs(
+    title = paste(
+      "Violência sexual",
+      "-",
+      min(year(base$data)),
+      "a",
+      max(year(base$data))
+    ),
+    subtitle = "Criança",
+    y = "Notificações",
+    x = "Trimestre"
+  )
+
+
+g4 <- base |> 
+  filter(ciclo_vida == "Adolescente") |> 
+  group_by(genero, idade) |> 
+  summarise(n=n(), .groups = 'drop') |> 
+  ggplot(aes(x = idade, y = n, color = genero))+
+  geom_line()+
+  theme_minimal()+
+  labs(
+    title = paste(
+      "Violência sexual",
+      "-",
+      min(year(base$data)),
+      "a",
+      max(year(base$data))
+    ),
+    subtitle = "Adolescente",
+    y = "Notificações",
+    x = "Trimestre"
+  )
+
+fmt_tri <- function(x) {
+  paste0(quarter(x), "º trim ", year(x))
+}
+
+base_4tri <- base |>
+  filter(dense_rank(desc(data)) <= 4)
+
+g5 <- base_4tri |> 
+  filter(ciclo_vida == "Criança") |> 
+  group_by(genero, idade) |> 
+  summarise(
+    n = n(),
+    .groups = "drop"
+  ) |> 
+  ggplot(aes(x = idade, y = n, color = genero)) +
+  geom_line() +
+  theme_minimal() +
+  labs(
+    title = paste(
+      "Violência sexual -",
+      fmt_tri(min(base_4tri$data, na.rm = TRUE)),
+      "a",
+      fmt_tri(max(base_4tri$data, na.rm = TRUE))
+    ),
+    subtitle = "Criança",
+    y = "Notificações",
+    x = "Idade"
+  )
+
+
+fmt_tri <- function(x) {
+  paste0(quarter(x), "º trim ", year(x))
+}
+
+base_4tri <- base |>
+  filter(dense_rank(desc(data)) <= 4)
+
+g6 <- base_4tri |> 
+  filter(ciclo_vida == "Adolescente") |> 
+  group_by(genero, idade) |> 
+  summarise(
+    n = n(),
+    .groups = "drop"
+  ) |> 
+  ggplot(aes(x = idade, y = n, color = genero)) +
+  geom_line() +
+  theme_minimal() +
+  labs(
+    title = paste(
+      "Violência sexual -",
+      fmt_tri(min(base_4tri$data, na.rm = TRUE)),
+      "a",
+      fmt_tri(max(base_4tri$data, na.rm = TRUE))
+    ),
+    subtitle = "Adolescente",
+    y = "Notificações",
+    x = "Idade"
+  )
+
+
+(g1 + g2 + g3 + g4 + g5 + g6) +
+  plot_layout(
+    ncol = 2,
+    nrow = 3,
+    guides = "collect"
+  ) &
+  theme(
+    legend.position = "bottom",
+    plot.title = element_text(size = 11),
+    plot.subtitle = element_text(size = 10),
+    axis.title = element_text(size = 9),
+    axis.text = element_text(size = 8)
+  )
+
+
+```
+
